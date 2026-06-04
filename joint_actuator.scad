@@ -7,12 +7,13 @@
 //  Design philosophy: print the structural parts (pulleys, shaft, plates), but
 //  use REAL 608ZZ ball bearings from the start (use_bearings = true) and a
 //  PURCHASED GT2 belt. Optionally swap the printed shaft for an 8mm ground shaft.
-//  Belt is a bought GT2 part (never printed). GT2 6mm closed-loop 80T = 160mm.
+//  Belt is a bought GT2 part (never printed). GT2 6mm closed-loop 75T = 150mm.
 // =============================================================================
 
 /* [ What to render / export ] */
 // Pick one. Export each as its own STL.
 PART = "assembly"; // [assembly, input_pulley, output_pulley, motor_plate, support_plate, output_shaft, output_collar, output_bushing, spacer, output_arm]
+show_labels = true; // assembly annotation labels
 
 /* [ Bearing selection ] */
 // true  = real 608ZZ bearings (22 OD x 7 W x 8 ID) pressed into the plates. (default)
@@ -24,7 +25,7 @@ boolean_eps       = 0.02;  // CSG overlap only - keep tiny (avoids coplanar face
 bore_clearance    = 0.20;  // printed bore -> shaft/screw slip fit (diametral)
 tooth_clearance   = 0.06;  // GT2 groove widening for belt mesh
 journal_clearance = 0.30;  // printed plain-bearing running fit (legacy phase-1)
-bearing_press_fit = 0.05;  // 608ZZ press into plate pocket (diametral, snug)
+bearing_press_fit = 0.10;  // positive value shrinks the 608ZZ pocket for press-fit (diametral)
 
 /* [ GT2 belt ] */
 belt_pitch       = 2.0;    // GT2 = 2mm pitch
@@ -46,16 +47,18 @@ set_screw_d      = 3.2;    // M3 grub screw clearance (radial)
 /* [ Geometry / center distance ] */
 // Center distance between motor shaft and output shaft.
 // Slotted motor mount allows +/- tension_travel/2 for belt tensioning.
-center_distance  = 40.0;
-tension_travel   = 10.0;   // slot length for motor (belt tension adjust)
-plate_gap        = 22.0;   // clear distance between the two frame plates
+center_distance  = 32.5;   // 150mm GT2 closed-loop belt nominal centre distance (20T -> 60T)
+tension_travel   = 6.0;    // slot length for motor (belt tension adjust)
+plate_gap        = 25.0;   // clear distance between the two frame plates
 
-/* [ NEMA17 motor (SF2424) ] */
-motor_size       = 42.3;   // faceplate
-motor_hole_pitch = 31.0;   // bolt circle (square pattern)
-motor_screw_d    = 3.4;    // M3 clearance
+/* [ NEMA17 motor (SF2424 = SANYO DENKI SF2424-12B41) ] */
+// Verified specs: frame 42mm sq, M3x0.5 mounts on 31mm pitch, 22mm pilot boss,
+// 5mm shaft, body length L = 59.5mm. Holding torque 0.8 N*m, 1.2 A/phase.
+motor_size       = 42.3;   // faceplate (42mm sq +/-0.5, +clearance)
+motor_hole_pitch = 31.0;   // bolt circle (31mm +/-0.25 square pattern)
+motor_screw_d    = 3.4;    // 4-M3x0.5 clearance (tapping depth 4mm min)
 motor_boss_d     = 24.0;   // 22mm pilot boss + clearance
-motor_body_len   = 40.0;   // for visualisation only (verify your motor)
+motor_body_len   = 59.5;   // body length L = 59.5mm +/-1 (datasheet)
 
 /* [ Frame plates / integrated posts ] */
 // The motor plate prints with the 4 standoff posts as one integral part;
@@ -72,6 +75,11 @@ lid_strut_w      = 6.0;    // thinner struts for the reduced support lid (spider
 hub_collar       = 6.0;    // material ring around the bearing OD at the hub
 boss_extra       = 3.0;    // post-boss diameter added beyond post_od
 motor_pad_margin = 3.0;    // rounded-square margin around the NEMA17 footprint
+plate_edge_margin = 8.0;   // rounded outer shell margin around shaft/post centers
+plate_corner_r    = 12.0;  // large case-like plate corner radius
+
+/* [ Visual refinement ] */
+skin_rounding     = 0.85;   // 2D outline smoothing for truss/pad intersections
 
 /* [ Bearings / journal ] */
 bearing_od       = 22.0;   // 608ZZ
@@ -82,7 +90,7 @@ bearing_lip      = 2.0;    // outer retaining-lip width, radial (Ø = bearing_od
 // plate_th (5) < bearing_w (7), so the hub is locally thickened toward the gap
 // to host a real lip; struts/pad stay thin.  hub_h = bearing_w + bearing_lip_floor.
 bearing_lip_floor = 1.5;   // axial material outboard of the bearing (the lip floor)
-bearing_snap_lip  = 0.6;   // gap-side snap lip, radial (bearing clicks past on insert)
+bearing_snap_lip  = 0.25;  // gap-side snap lip, radial (bearing clicks past on insert)
 bearing_snap_h    = 1.0;   // height of the snap-lip ring (chamfered lead-in)
 
 /* [ Printed shaft (phase 1) ] */
@@ -131,12 +139,12 @@ include <lib/viz.scad>
 //  Render selector
 // =============================================================================
 if      (PART == "assembly")       assembly();
-else if (PART == "input_pulley")   input_pulley();
-else if (PART == "output_pulley")  output_pulley();
-else if (PART == "motor_plate")    motor_plate();
-else if (PART == "support_plate")  support_plate();
-else if (PART == "output_shaft")   output_shaft();
-else if (PART == "output_collar")  output_collar();
-else if (PART == "output_bushing") output_bushing();
-else if (PART == "spacer")         spacer();
-else if (PART == "output_arm")     output_arm();
+else if (PART == "input_pulley")   color("Orange") input_pulley();
+else if (PART == "output_pulley")  color("Tomato") output_pulley();
+else if (PART == "motor_plate")    { color([0.94, 0.92, 0.86]) motor_plate_body(); color([1.0, 0.28, 0.06]) motor_posts(); }
+else if (PART == "support_plate")  color([0.94, 0.92, 0.86]) support_plate();
+else if (PART == "output_shaft")   color("Silver") output_shaft();
+else if (PART == "output_collar")  color([0.05, 0.25, 0.85]) output_collar();
+else if (PART == "output_bushing") color([0.82, 0.46, 0.16]) output_bushing();
+else if (PART == "spacer")         color("LightSlateGray") spacer();
+else if (PART == "output_arm")     color("LightSteelBlue") output_arm();
