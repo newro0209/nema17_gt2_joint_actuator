@@ -64,23 +64,10 @@ skin_rounding     = 0.85;
 /* [ Bearings / journal (베어링 / 저널) ] */
 bearing_od       = 22.0;
 bearing_w        = 7.0;
-bearing_lip      = 2.0;
 
-/* [ Bearing retention (베어링 고정) ] */
-// A안: press-fit outer race + a single outer retaining lip (no snap lip).
-// (A안: 외륜 억지 끼워맞춤 + 단일 외부 유지 립 (스냅 립 없음))
-// Insert each 608ZZ from the gap side until it bottoms on the lip floor;
-// (각 608ZZ 베어링을 갭 쪽에서 삽입하여 립 바닥에 닿을 때까지 밀어 넣음)
-// remove it by pushing on the outer race from the outboard side.
-// (외부 쪽에서 외륜을 밀어내어 분리함)
-bearing_lip_floor = 1.5;   // axial material outboard of the bearing (the lip floor) (베어링 외부의 축 방향 두께, 즉 립 바닥)
-// Motor (lower) plate: blind/closed outer face (dust cap). A shallow recess on
-// the bearing side clears the rotating inner race/shield; the outer race still
-// rests on the full lip floor. The support (upper) plate stays open (Ø18 lip).
-// (모터 (하단) 플레이트: 막혀있는 외부 면 (먼지 덮개). 베어링 쪽에 얕은 홈을 파서 회전하는 내륜/실드와 간섭을 피함; 외륜은 립 바닥 전체에 지지됨. 서포트 (상단) 플레이트는 열린 상태(Ø18 립) 유지.)
-lower_plate_blind     = true;   // close the motor-side bearing outer face (모터 쪽 베어링 외부 면 닫기)
-bearing_inner_relief_d = 14.0;  // inner-race/shield clearance recess diameter (내륜/실드 간섭 방지용 홈 직경)
-bearing_inner_relief_h = 0.7;   // recess depth (leaves bearing_lip_floor - this as solid cap) (홈 깊이 - bearing_lip_floor에서 이 값을 뺀 나머지가 캡 두께가 됨)
+/* [ Bearing pocket (베어링 포켓) ] */
+// 608ZZ outer race is held only by the press-fit bore.
+// (608ZZ 외륜은 억지 끼워맞춤 보어만으로 고정됩니다.)
 
 /* [ Printed shaft (phase 1) (출력용 샤프트 (1단계)) ] */
 shaft_overhang   = 30.0;

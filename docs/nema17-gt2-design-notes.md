@@ -18,7 +18,7 @@
 
 - `bearing_press_fit` is diametral interference. A positive value makes the pocket smaller.
   (`bearing_press_fit`은 직경의 억지 끼워맞춤 정도를 나타냅니다. 양수 값은 포켓을 더 작게 만듭니다.)
-- Retention is press-fit plus a single outer lip (`bearing_lip` / `bearing_lip_floor`); the gap side is open so the bearing is pushed out from the outboard side. No snap lip.
-  (고정 방식은 억지 끼워맞춤과 단일 외부 립(`bearing_lip` / `bearing_lip_floor`)의 조합입니다. 틈새 쪽이 열려 있어 바깥쪽에서 베어링을 밀어낼 수 있습니다. 스냅 립은 없습니다.)
+- Bearing retention is press-fit only; there is no outer lip, blind cap, or inner-race relief feature.
+  (베어링 고정은 억지 끼워맞춤만 사용합니다. 외부 립, 막힌 캡, 내륜 도피 홈은 없습니다.)
 - Test bearing pockets before printing the full frame if the printer/material has not been characterized.
   (프린터나 재료의 특성이 완전히 파악되지 않았다면, 전체 프레임을 출력하기 전에 베어링 포켓을 먼저 테스트하세요.)

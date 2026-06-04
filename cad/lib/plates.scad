@@ -10,22 +10,20 @@
 //    * support plate (lid): continuous upper bearing support.
 //      (서포트 플레이트 (상단): 끊김 없이 이어지는 상단 베어링 지지부.)
 //
-//  Bearing retention (A안): plate_th (5) < bearing_w (7), so the hub is LOCALLY
-//  thickened so a real lip exists. The 608ZZ is press-fit and axially stopped on
-//  the outboard side by a retaining lip floor (Ø bearing_od-2*bearing_lip).
-//  (베어링 고정 (A안): 플레이트 두께(5) < 베어링 너비(7)이므로 허브 부분을 국부적으로 두껍게 하여 실제 립(lip)을 만듭니다. 608ZZ는 억지 끼워맞춤되며 외부 쪽은 유지 립 바닥(Ø 베어링 외경-2*베어링_립)에 의해 축 방향으로 고정됩니다.)
-//  Insert each bearing from the gap side; remove it by pushing on the outer race
-//  from the outboard side. The hub grows toward the gap on the base and away
+//  Bearing pocket: plate_th (5) < bearing_w (7), so the hub is LOCALLY
+//  thickened to hold the full bearing width as a plain press-fit bore.
+//  (베어링 포켓: 플레이트 두께(5) < 베어링 너비(7)이므로 허브 부분을 국부적으로 두껍게 하여 전체 베어링 폭을 단순 억지 끼워맞춤 보어로 지지합니다.)
+//  The hub grows toward the gap on the base and away
 //  from the gap on the lid so each prints without support (base: motor-side down;
 //  lid: gap-side down).
-//  (각 베어링을 갭(gap) 쪽에서 삽입하고, 분리할 때는 외부 쪽에서 외륜을 밀어냅니다. 허브는 하단 플레이트에서는 갭을 향해 돌출되고 상단 플레이트에서는 갭 반대 방향으로 돌출되어 둘 다 서포트 없이 출력 가능합니다 (하단: 모터 쪽이 아래로, 상단: 갭 쪽이 아래로).)
+//  (허브는 하단 플레이트에서는 갭을 향해 돌출되고 상단 플레이트에서는 갭 반대 방향으로 돌출되어 둘 다 서포트 없이 출력 가능합니다 (하단: 모터 쪽이 아래로, 상단: 갭 쪽이 아래로).)
 //  Depends on plate/bearing/motor params + standoffs and through()/xslot().
 //  (플레이트/베어링/모터 파라미터 + 스탠드오프 및 through()/xslot()에 의존합니다.)
 // =============================================================================
 
-// Hub height needed to host: lip floor + full bearing width.
-// (베어링을 수용하기 위해 필요한 허브 높이: 립 바닥 + 베어링 전체 너비)
-function bearing_hub_h() = bearing_lip_floor + bearing_w;
+// Hub height needed to host the full bearing width.
+// (베어링 전체 너비를 수용하기 위해 필요한 허브 높이)
+function bearing_hub_h() = bearing_w;
 
 // 2D rounded/tapered bar between two points.
 // (두 지점 사이의 둥근/테이퍼드 2D 바)
@@ -106,40 +104,17 @@ module bearing_hub_boss(is_base) {
         cylinder(d = bearing_od + 2 * hub_collar + 1.0, h = extra, $fn = 96);
 }
 
-// Bearing pocket: press-fit bore + outer retaining feature.
-// (베어링 포켓: 억지 끼워맞춤 보어 + 외부 유지 기능.)
-//   base : motor side. Either an open Ø(od-2*lip) lip, OR (lower_plate_blind)
-//          a closed dust-cap floor with only an inner-race clearance recess.
-//   (base: 모터 측. 열려있는 Ø(외경-2*립) 립 구조이거나, (lower_plate_blind일 경우) 막혀있는 먼지 덮개 바닥에 내륜 간섭 방지용 홈만 있는 구조.)
-//   lid  : support side, always open lip so the shaft passes through.
-//   (lid: 서포트 측, 샤프트가 통과할 수 있도록 항상 열려있는 립 구조.)
+// Bearing pocket: press-fit bore only.
+// (베어링 포켓: 억지 끼워맞춤 보어만.)
 module output_bore_feature(is_base) {
     H = bearing_hub_h();
     pf = bearing_od - bearing_press_fit;
     translate([center_distance, 0, 0]) {
         if (is_base) {
-            if (lower_plate_blind) {
-                // closed outer face: solid cap, recessed on the bearing side to
-                // clear the rotating inner race/shield; outer race rests on the cap.
-                // (닫힌 외부 면: 솔리드 캡. 베어링 쪽에 회전하는 내륜/실드 간섭 방지 홈이 있으며, 외륜은 캡에 안착됨.)
-                translate([0, 0, bearing_lip_floor - bearing_inner_relief_h])
-                    cylinder(d = bearing_inner_relief_d,
-                             h = bearing_inner_relief_h + boolean_eps, $fn = 60);
-            } else {
-                // open lip: Ø(od-2*lip) through to the outer face.
-                // (열린 립: 외부 면까지 Ø(외경-2*립)으로 뚫림.)
-                through(bearing_od - 2 * bearing_lip, H);
-            }
-            // press-fit pocket, open toward the gap.
-            // (억지 끼워맞춤 포켓, 갭 방향으로 열려있음.)
-            translate([0, 0, bearing_lip_floor])
-                cylinder(d = pf, h = bearing_w + boolean_eps, $fn = 80);
+            cylinder(d = pf, h = H + boolean_eps, $fn = 80);
         } else {
-            // lid hub spans plate_th-H..plate_th (away from gap). Gap mouth at plate_th.
-            // (상단 허브는 plate_th-H 부터 plate_th까지 차지함 (갭 반대 방향). 갭 입구는 plate_th에 위치.)
-            translate([0, 0, plate_th - H]) through(bearing_od - 2 * bearing_lip, H);
-            translate([0, 0, plate_th - bearing_w])
-                cylinder(d = pf, h = bearing_w + boolean_eps, $fn = 80);
+            translate([0, 0, plate_th - H])
+                cylinder(d = pf, h = H + boolean_eps, $fn = 80);
         }
     }
 }

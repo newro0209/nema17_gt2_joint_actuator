@@ -7,8 +7,8 @@
 
 // World-Z of the bearing outer faces (where the shaft shoulder seats).
 // (베어링 외부 면의 월드 Z 좌표 - 샤프트 숄더가 안착되는 위치)
-function lower_outer_z() = bearing_lip_floor - plate_th;   // motor-side bearing outer face (모터 쪽 베어링 외부 면)
-function upper_outer_z() = plate_gap + bearing_w;          // arm-side bearing outer face (암 쪽 베어링 외부 면)
+function lower_outer_z() = -plate_th;              // motor-side bearing outer face (모터 쪽 베어링 외부 면)
+function upper_outer_z() = plate_gap + bearing_w;  // arm-side bearing outer face (암 쪽 베어링 외부 면)
 
 module output_shaft() {
     z0     = lower_outer_z();                             // shaft bottom flush with motor-side bearing outer face (모터 쪽 베어링 외부 면과 수평이 되는 샤프트 바닥)
