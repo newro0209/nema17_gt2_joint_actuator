@@ -48,3 +48,17 @@ module xslot(d, len) {
         translate([ len / 2, 0]) circle(d = d, $fn = 32);
     }
 }
+
+// 45° lead-in cones to subtract at a bore mouth. They make press-fit / slip-fit
+// assembly self-centering and relieve first-layer elephant foot on the bed face.
+// Position with translate([x, y, mouth_z]); diameter d is the bore at full size.
+// (보어 입구에 빼낼 45° 리드인 콘. 압입/슬립핏 조립을 자동 정렬되게 하고 베드 면의 엘리펀트풋을 완화합니다.
+//  translate([x, y, 입구_z])로 배치하며, d는 보어의 정규 직경입니다.)
+module chamfer_up(d, c = print_chamfer, fn = 48) {   // mouth opens toward +Z (insert/clear from top) (입구가 +Z로 열림)
+    translate([0, 0, -c])
+        cylinder(d1 = d, d2 = d + 2 * c, h = c + boolean_eps, $fn = fn);
+}
+module chamfer_dn(d, c = print_chamfer, fn = 48) {   // mouth opens toward -Z (bed face / insert from bottom) (입구가 -Z로 열림)
+    translate([0, 0, -boolean_eps])
+        cylinder(d1 = d + 2 * c, d2 = d, h = c + boolean_eps, $fn = fn);
+}

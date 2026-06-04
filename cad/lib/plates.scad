@@ -104,13 +104,14 @@ module bearing_hub_boss(is_base) {
 module output_bore_feature(is_base) {
     H = bearing_hub_h();
     pf = bearing_od - bearing_press_fit;
+    z0 = is_base ? 0 : plate_th - H;
     translate([center_distance, 0, 0]) {
-        if (is_base) {
+        translate([0, 0, z0])
             cylinder(d = pf, h = H + boolean_eps, $fn = 80);
-        } else {
-            translate([0, 0, plate_th - H])
-                cylinder(d = pf, h = H + boolean_eps, $fn = 80);
-        }
+        // 45° lead-in at both outer faces: self-centering press-fit start + elephant-foot relief.
+        // (양쪽 외부 면 45° 리드인: 압입 자동 정렬 + 엘리펀트풋 완화.)
+        translate([0, 0, plate_th]) chamfer_up(pf, print_chamfer, 80);
+        chamfer_dn(pf, print_chamfer, 80);
     }
 }
 

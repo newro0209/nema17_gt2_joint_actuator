@@ -12,31 +12,37 @@ function upper_outer_z() = plate_gap + bearing_w;  // arm-side bearing outer fac
 
 module output_shaft() {
     z0     = lower_outer_z();                             // shaft bottom flush with motor-side bearing outer face (모터 쪽 베어링 외부 면과 수평이 되는 샤프트 바닥)
-    sh_lo  = upper_outer_z() - z0;                        // shoulder seats on the upper bearing outer face (상단 베어링 외부 면에 안착되는 숄더)
-    L      = (upper_outer_z() + shaft_shoulder_h + shaft_overhang) - z0;
-    flat0  = (lower_outer_z() + bearing_w) - z0;          // pulley/D-cut zone: between the two gap faces (풀리/D-컷 영역: 두 갭 면 사이)
-    flat1  = (upper_outer_z() - bearing_w) - z0;
-    // Self-supporting shoulder: flat seat (toward the bearing) + a 45-deg conical
-    // (서포트가 필요 없는 숄더: 평평한 안착면 (베어링 쪽) + 45도 원뿔형)
-    // lead-out on top. Print the shaft OUTPUT-END-DOWN so the seat face points up
-    // (상단 리드아웃. 출력단이 아래를 향하도록 샤프트를 출력하여 안착면이 위를 향하게 하고)
-    // (a flat shelf) and the cone is the only downward face -> 45 deg, no support.
-    // (평평한 선반 형태, 원뿔이 유일하게 아래를 향하는 면이 되도록 함 -> 45도 경사로 서포트 불필요)
+    seat   = upper_outer_z() - bearing_w - z0;            // shoulder seats on the upper bearing GAP-side (inner) face (상단 베어링 갭쪽(안쪽) 면에 안착되는 숄더)
+    L      = (upper_outer_z() + shaft_overhang) - z0;     // output stub reaches shaft_overhang above the upper bearing (출력 스텁은 상단 베어링 위로 shaft_overhang 만큼 뻗음)
+    flat0  = (lower_outer_z() + bearing_w) - z0;          // D-cut starts at the lower gap face (D-컷은 하부 갭 면부터 시작)
+    flat1  = seat - shaft_shoulder_h;                     // ...up to just below the inboard shoulder (seat face stays full) (...안쪽 숄더 바로 아래까지 (안착면 보존))
+    // Inboard shoulder = positive PULL-OUT stop: its flat top seats UP against the
+    // (안쪽 숄더 = pull-out 기계적 정지: 평평한 윗면이 상단 베어링 내륜 갭쪽 면을 위로 받침)
+    // upper bearing inner race; the underside is a 45° self-supporting cone.
+    // (아랫면은 45° 자립 원뿔.)
+    // Print MOTOR-END-DOWN (motor end on the bed): the cone is the only downward
+    // (모터단을 베드로 향하게 출력: 원뿔이 유일한 아래보기 면 -> 서포트 불필요)
+    // face. The output pulley installs HUB-DOWN to clear this shoulder.
+    // (출력 풀리는 이 숄더를 피하도록 허브가 아래로 가게 조립.)
     taper  = (shaft_shoulder_d - output_bore) / 2;        // 45-deg radial step (45도 반경 방향 단차)
     difference() {
         union() {
-            cylinder(d = output_bore, h = L, $fn = 72);
-            // integral shoulder: seats on the upper bearing inner race -> blocks axial slide
-            // (일체형 숄더: 상단 베어링 내륜에 안착됨 -> 축방향 미끄러짐 방지)
-            translate([0, 0, sh_lo]) {
-                cylinder(d = shaft_shoulder_d, h = shaft_shoulder_h - taper, $fn = 64);
-                translate([0, 0, shaft_shoulder_h - taper])
-                    cylinder(d1 = shaft_shoulder_d, d2 = output_bore,
-                             h = taper, $fn = 64);
+            // chamfered motor-end tip (bed side): lead-in into the lower bearing + elephant-foot relief.
+            // (모따기된 모터단 끝(베드 쪽): 하부 베어링 진입 리드인 + 엘리펀트풋 완화.)
+            cylinder(d1 = output_bore - 2 * print_chamfer, d2 = output_bore,
+                     h = print_chamfer, $fn = 72);
+            translate([0, 0, print_chamfer])
+                cylinder(d = output_bore, h = L - print_chamfer, $fn = 72);
+            // integral inboard shoulder: seats on the upper bearing inner race -> blocks pull-out
+            // (일체형 안쪽 숄더: 상단 베어링 내륜에 안착됨 -> pull-out(빠짐) 정지)
+            translate([0, 0, seat - shaft_shoulder_h]) {
+                cylinder(d1 = output_bore, d2 = shaft_shoulder_d, h = taper, $fn = 64);
+                translate([0, 0, taper])
+                    cylinder(d = shaft_shoulder_d, h = shaft_shoulder_h - taper, $fn = 64);
             }
         }
-        // D-cut flat for the output-pulley set screw (gap/pulley engagement zone)
-        // (출력 풀리 무두볼트를 위한 D-컷 평면 (갭/풀리 맞물림 영역))
+        // D-cut flat for the output-pulley set screw (gap zone, below the shoulder)
+        // (출력 풀리 무두볼트를 위한 D-컷 평면 (갭 영역, 숄더 아래))
         translate([output_bore / 2 - shaft_flat_depth, -output_bore, flat0])
             cube([output_bore, 2 * output_bore, flat1 - flat0]);
     }
@@ -53,6 +59,8 @@ module output_arm() {
                     }
         }
         through(output_bore + bore_clearance, arm_th);
+        chamfer_dn(output_bore + bore_clearance, print_chamfer);
+        translate([0, 0, arm_th]) chamfer_up(output_bore + bore_clearance, print_chamfer);
         translate([arm_len, 0, 0]) through(arm_end_hole_d, arm_th, 32);
         if (set_screw_d > 0)
             translate([0, 0, arm_th / 2]) rotate([-90, 0, 0])

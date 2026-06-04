@@ -13,6 +13,7 @@ boolean_eps       = 0.02;
 bore_clearance    = 0.20;
 tooth_clearance   = 0.06;
 bearing_press_fit = 0.10;  // positive value shrinks the 608ZZ pocket for press-fit (diametral) (양수 값은 억지 끼워맞춤을 위해 608ZZ 포켓을 축소시킴, 직경 기준)
+print_chamfer     = 0.6;   // 45° lead-in on bores/shaft: easier press-fit/slip-fit + elephant-foot relief (보어/샤프트 45° 리드인: 압입/슬립핏 용이 + 엘리펀트풋 완화)
 
 /* [ GT2 belt (GT2 벨트) ] */
 belt_pitch       = 2.0;
@@ -53,7 +54,8 @@ standoff_screw_d = 3.4;
 post_pilot_d     = 2.6;
 post_pilot_depth = 14.0;
 post_tower_size  = 20.0;
-post_inner_relief_r = 12.0;  // motor-end tower inner-corner round (clears mount slot + M3 head) (모터 쪽 타워 안쪽 모서리 둥글기 - 마운트 슬롯 및 M3 볼트 헤드와 간섭 방지)
+post_wall        = bearing_w;  // post leg thickness = plate thickness; one structural thickness everywhere (포스트 레그 두께 = 플레이트 두께; 구조 두께를 어디서나 동일하게)
+post_inner_relief_r = post_tower_size - post_wall;  // inner-corner round derived from post_wall; larger round also clears the mount slot + M3 head (post_wall에서 파생된 안쪽 모서리 둥글기; 더 큰 둥글기는 마운트 슬롯 및 M3 헤드 간섭도 방지)
 post_pulley_clearance = 2.0;
 strut_w          = 8.0;
 hub_collar       = 6.0;
@@ -74,9 +76,11 @@ shaft_overhang   = 30.0;
 shaft_flat_depth = 1.0;
 
 /* [ Output shaft retention (출력 샤프트 고정) ] */
-// Integral shoulder seats on the upper bearing outer face -> blocks upward
-// slide; downward slide is held by the output-pulley set screw on the D-cut.
-// (일체형 숄더가 상단 베어링 외부 면에 안착됨 -> 위쪽으로 밀리는 것을 막음; 아래쪽으로 밀리는 것은 D-컷에 있는 출력 풀리 무두볼트로 고정됨)
+// Integral shoulder seats on the upper bearing GAP-side (inner) race face ->
+// positive PULL-OUT stop (shaft can't slide out toward the arm). Push-in toward
+// the motor is held by the output-pulley set screw on the D-cut. The output
+// pulley installs HUB-DOWN so its hub clears this inboard shoulder.
+// (일체형 숄더가 상단 베어링 갭쪽(안쪽) 내륜 면에 안착됨 -> pull-out(빠짐) 기계적 정지(샤프트가 암 쪽으로 빠지지 않음). 모터 쪽으로 밀려 들어가는 것은 D-컷의 출력 풀리 무두볼트가 고정. 출력 풀리는 허브가 아래로 가게 조립하여 이 안쪽 숄더를 피함.)
 shaft_shoulder_d = 12.0;
 shaft_shoulder_h = 3.0;
 

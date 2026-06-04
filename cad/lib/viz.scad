@@ -83,7 +83,7 @@ module assembly_labels() {
     label("support_plate", [-26, yf, plate_gap + plate_th/2]);
     label("input_pulley",  [0, yf, plate_gap + 12]);
     label("output_pulley", [center_distance, yf, plate_gap + 12]);
-    label("output_shaft",  [center_distance, yf, upper_outer_z() + shaft_shoulder_h + shaft_overhang - 4]);
+    label("output_shaft",  [center_distance, yf, upper_outer_z() + shaft_overhang - 4]);
     label("post",          [center_distance + 18, yf, plate_gap + 6]);
     label("GT2 belt",      [center_distance/2, yf, plate_gap/2]);
     label("608ZZ",         [center_distance, yf, upper_outer_z() - bearing_w/2]);
@@ -106,7 +106,11 @@ module assembly() {
     // (풀리, 톱니 중심이 갭 중심에 맞춰짐)
     pulley_z = plate_gap/2 - (flange_t + belt_width/2);
     color([1.0, 0.28, 0.06]) translate([0, 0, pulley_z]) input_pulley();
-    color([1.0, 0.28, 0.06]) translate([center_distance, 0, pulley_z]) output_pulley();
+    // output pulley installs HUB-DOWN so its hub clears the shaft's inboard shoulder at the gap top
+    // (출력 풀리는 허브가 아래로 향하게 조립 -> 갭 상단의 샤프트 안쪽 숄더를 피함)
+    color([1.0, 0.28, 0.06])
+        translate([center_distance, 0, plate_gap/2 + (flange_t + belt_width/2)])
+            rotate([180, 0, 0]) output_pulley();
 
     color("Silver")
         translate([center_distance, 0, lower_outer_z()]) output_shaft();

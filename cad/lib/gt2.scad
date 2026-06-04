@@ -82,6 +82,10 @@ module gt2_pulley(teeth, bore, hub_h) {
                     }
         }
         through(bore + bore_clearance, total_h);
+        // 45° bore lead-ins: easier slide onto the shaft + bed-face elephant-foot relief.
+        // (보어 45° 리드인: 샤프트에 끼우기 쉬움 + 베드 면 엘리펀트풋 완화.)
+        chamfer_dn(bore + bore_clearance, print_chamfer);
+        translate([0, 0, total_h]) chamfer_up(bore + bore_clearance, print_chamfer);
         if (set_screw_d > 0) {
             sz = (hub_h > 0) ? top_flange_top + hub_h / 2 : base + belt_width / 2;
             translate([0, 0, sz]) rotate([-90, 0, 0])
