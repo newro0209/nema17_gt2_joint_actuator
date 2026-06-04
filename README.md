@@ -27,40 +27,32 @@ cad/                 OpenSCAD mechanical design
   src/               one printable part per file, plus preview-only assembly.scad
   render.ps1         export printable parts to cad/build/*.stl
 docs/                reference notes
-joint_actuator.scad  legacy compatibility entrypoint with PART selector
 preview.png          assembly render preview
 ```
 
 모든 공유 치수와 공차는 **`cad/lib/params.scad`** 에서 관리합니다.
 파트별 STL은 `cad/src/*.scad`가 각각 자기 자신을 렌더링하도록 구성되어 있습니다.
-기존처럼 `joint_actuator.scad`를 OpenSCAD에서 열어 `PART` 방식으로 미리보기/출력하는 것도 가능합니다.
 
 ---
 
-## 파트 목록 (`PART` 값)
+## 파트 목록
 
-| `PART` | 설명 | 수량 |
+| 파일 | 설명 | 수량 |
 |--------|------|------|
-| `input_pulley`   | 20T GT2 풀리 (보어 5mm, 플랜지 양면, M3 셋스크류) | 1 |
-| `output_pulley`  | 60T GT2 풀리 (보어 8mm, 플랜지 양면, M3 셋스크류) | 1 |
-| `motor_plate`    | **솔리드 모터 패드 + 베어링 허브 트러스 + 4개 포스트 일체형** (스켈레탈). 모터 구멍은 장력조절용 슬롯 | 1 |
-| `support_plate`  | **개방형 4-스포크 스파이더 (축소, lid_strut_w)** — 베어링 허브를 4개 포스트에 스트럿으로 연결. 모터 영역 없어 필라멘트 최소 | 1 |
-| `output_shaft`   | Phase 1 프린트 출력샤프트 8mm (셋스크류용 D컷, 샤프트 숄더 일체) | 1 |
-| `output_bushing` | Phase 1 평베어링(부싱) 슬리브, 22mm 포켓 압입 (선택) | 1~2 |
-| `spacer`         | (레거시) 별도 스탠드오프 — 포스트 일체형으로 대체됨, 볼트관통 폴백용 | 0 |
-| `output_arm`     | 출력 링크/암 (선택) | 1 |
-| `assembly`       | 전체 조립 시각화 (출력 전용) | — |
+| `cad/src/input_pulley.scad`   | 20T GT2 풀리 (보어 5mm, 플랜지 양면, M3 셋스크류) | 1 |
+| `cad/src/output_pulley.scad`  | 60T GT2 풀리 (보어 8mm, 플랜지 양면, M3 셋스크류) | 1 |
+| `cad/src/motor_plate.scad`    | **모터 패드 + 베어링 허브 트러스 + 4개 코너 타워 일체형**. 모터 구멍은 장력조절용 슬롯 | 1 |
+| `cad/src/support_plate.scad`  | 베어링 허브와 4개 체결부를 연결하는 상부 지지 플레이트 | 1 |
+| `cad/src/output_shaft.scad`   | 프린트 출력샤프트 8mm (셋스크류용 D컷, 샤프트 숄더 일체) | 1 |
+| `cad/src/output_arm.scad`     | 출력 링크/암 (선택) | 1 |
+| `cad/src/assembly.scad`       | 전체 조립 시각화 (출력 비대상) | — |
 
 ---
 
-## 베어링 — `use_bearings`
+## 베어링
 
-- **`use_bearings = true` (기본값, 608ZZ 바로 적용)**
-  출력 구멍에 **608ZZ 베어링(22 OD × 7 W × 8 ID) 압입 포켓 + 이탈방지 립**.
-  → 프린트 풀리 + (Phase 1)프린트 8mm 샤프트로 시작하고, 이후 8mm 연삭 샤프트로만 교체하면 됩니다. 프레임/볼트 패턴은 동일.
-- **`use_bearings = false` (레거시 테스트 전용)**
-  플레이트 출력 구멍이 `8mm + 여유`로 뚫려 **샤프트가 플라스틱에 직접 지지(평베어링)**.
-  마찰·마모가 커서 단순 동작 확인용입니다. 실사용은 위 608ZZ 기본값을 쓰세요.
+출력 구멍에는 **608ZZ 베어링(22 OD × 7 W × 8 ID) 압입 포켓 + 이탈방지 립**을 사용합니다.
+프린트 풀리 + 프린트 8mm 샤프트로 시작하고, 이후 8mm 연삭 샤프트로 교체할 수 있습니다. 프레임/볼트 패턴은 동일합니다.
 
 > **벨트는 구매 부품입니다.** 실물 GT2 6mm 닫힌루프 벨트를 사용하세요(프린팅하지 않음).
 
@@ -68,23 +60,26 @@ preview.png          assembly render preview
 
 `plate_th = 5mm`는 `bearing_w = 7mm`보다 얇아서 기존 카운터보어 립이 실제로 존재하지 않았습니다. 이를 해결하기 위해 허브를 갭 쪽으로 국소 증육(hub_h ≈ 8.5mm)하여 실제 립을 확보했으며, 스트럿·패드는 5mm 그대로 유지합니다.
 
-**양 플레이트가 608ZZ를 축방향으로 포지티브 구속합니다:**
+**베어링 고정 (A안: 압입 + 단일 외측 립):**
 
-- **외측(아우터 면):** 실제 이탈방지 립 — 직경 `bearing_od − 2×bearing_lip`, 축방향 재료 두께 `bearing_lip_floor = 1.5mm`
-- **갭 측(이너 면):** 프린트된 **스냅 립** (`bearing_snap_lip = 0.6mm` 반경, `bearing_snap_h = 1.0mm`, 리드인 챔퍼) — 베어링을 눌러 끼우면 클릭되어 걸림. 별도 하드웨어 불필요
+- **압입:** 608ZZ 외륜을 포켓에 압입(`bearing_press_fit = 0.10mm` 간섭) — 라디얼 고정 + 마찰로 축방향도 잡힘
+- **외측(아우터 면):**
+  - **상부(support) 플레이트:** 이탈방지 립 한 곳(Ø`bearing_od − 2×bearing_lip`) — 샤프트가 관통해 위로 나옴
+  - **하부(motor) 플레이트:** **막힌 캡(`lower_plate_blind = true`)** — 샤프트가 이쪽으로 나오지 않으므로 외부 면을 닫아 먼지 차단/외관 정리. 베어링 쪽에 내륜 도피 홈(`bearing_inner_relief_d = 14mm`, 깊이 `bearing_inner_relief_h = 0.7mm`)만 파서 회전하는 내륜·실드는 비접촉, 외륜은 캡 전면이 받침
+- **갭 측(이너 면):** 열림 — 베어링을 갭 쪽에서 넣어 립/캡에 바닥냄. 분해 시 상부는 아우터 쪽에서 외륜을 밀어냄 (스냅 립 없음)
+- 양 플레이트 외륜은 모두 고정해도 되지만, 내륜은 샤프트 숄더가 한쪽만 잡아 **과구속(바인딩) 없음**
 
-**샤프트 축방향 잠금 (풀리 셋스크류와 독립적):**
+**샤프트 축방향 잠금:**
 
-- `output_shaft` 일체형 **숄더** (`shaft_shoulder_d ≈ 12mm`, `shaft_shoulder_h ≈ 3mm`) — 암(arm) 쪽(상부) 베어링 내륜에 착좌하여 축방향 이동을 막음
+- `output_shaft` 일체형 **숄더** (`shaft_shoulder_d ≈ 12mm`, `shaft_shoulder_h ≈ 3mm`) — 암(arm) 쪽(상부) 베어링 외측 면에 착좌해 상향 이탈 방지. 하향은 출력 풀리 D컷 셋스크류가 잡음
 
 | 파라미터 | 값 | 설명 |
 | -------- | --- | ---- |
+| `bearing_press_fit` | 0.10 mm | 외륜 압입 간섭(직경) |
 | `bearing_lip_floor` | 1.5 mm | 외측 립 축방향 두께 |
-| `bearing_snap_lip` | 0.6 mm | 스냅 립 반경 돌출량 |
-| `bearing_snap_h` | 1.0 mm | 스냅 립 높이 |
+| `bearing_lip` | 2.0 mm | 외측 립 반경 폭 |
 | `shaft_shoulder_d` | ~12 mm | 샤프트 숄더 직경 |
 | `shaft_shoulder_h` | ~3 mm | 샤프트 숄더 높이 |
-| `lid_strut_w` | 6 mm | support_plate 스트럿 폭 (base strut_w=8mm보다 좁음) |
 
 ---
 
@@ -95,8 +90,8 @@ preview.png          assembly render preview
 - 벨트: **GT2 6mm 닫힌루프 75T(150mm)**, 플레이트 간격 `plate_gap = 25mm`
 - 베어링: 608ZZ ×2 / 출력 보어 8mm / 입력 보어 5mm
 - 셋스크류: M3 / **리드↔포스트 결합: M3 자가탭(또는 heat-set 인서트)**
-- **스탠드오프 = 모터 플레이트 일체형 포스트** `post_od = 9mm`, 높이 `plate_gap`, 포스트 상단 `post_pilot_d = 2.6mm` 자가탭 파일럿
-- **스켈레탈 프레임**: 두 플레이트는 솔리드 슬래브가 아니라 노드(베어링 허브·포스트 보스·모터 패드) + 스트럿 트러스. 두 플레이트 형상이 **서로 다름** (베이스=모터 패드형, 리드=개방 스파이더). 튜닝: `strut_w = 8`, `hub_collar = 6`, `boss_extra = 3`, `motor_pad_margin = 3`
+- **스탠드오프 = 모터 플레이트 일체형 코너 타워**: 높이 `plate_gap`, 포스트 상단 `post_pilot_d = 2.6mm` 자가탭 파일럿
+- **프레임**: 두 플레이트는 노드(베어링 허브·포스트 보스·모터 패드) + 스트럿 구조입니다. 두 플레이트 형상은 **서로 다르며**, 베이스는 모터 패드와 코너 타워가 한 덩어리처럼 이어집니다. 튜닝: `strut_w = 8`, `hub_collar = 6`, `boss_extra = 3`, `motor_pad_margin = 3`
 
 ### 공차 / 끼워맞춤 (0.28mm Standard @ SparkX i7, 0.4 노즐 기준)
 
@@ -105,12 +100,11 @@ preview.png          assembly render preview
 - `boolean_eps = 0.02` — CSG 겹침 전용(작게 유지, 동일평면 면 방지)
 - `bore_clearance = 0.20` — 프린트 보어↔샤프트/스크류 슬립핏(직경)
 - `tooth_clearance = 0.06` — GT2 톱니 골 확장(벨트 맞물림)
-- `bearing_press_fit = 0.05` — 608ZZ 포켓 압입(직경, 스너그)
-- `journal_clearance = 0.30` — 프린트 평베어링 런닝핏(레거시)
+- `bearing_press_fit = 0.10` — 608ZZ 포켓 압입(양수값은 포켓 직경을 줄임)
 > 실측 후 너무 빡빡하면 위 값을 0.05~0.1mm씩 키우세요.
 
 ### 벨트 길이 / 장력
-모터 플레이트의 4개 장착 구멍과 보스 구멍이 **X축 슬롯(`tension_travel = 10mm`)** 이라 모터를 밀고당겨 장력을 잡습니다.
+모터 플레이트의 4개 장착 구멍과 보스 구멍이 **X축 슬롯(`tension_travel = 6mm`)** 이라 모터를 밀고당겨 장력을 잡습니다.
 
 닫힌 루프 벨트 길이:  `L = 2C + π·(PD₁+PD₂)/2 + (PD₂−PD₁)²/(4C)`
 - C=32.5 → L ≈ 150mm → **GT2 6mm 닫힌루프 75T(150mm)** 사용 후 슬롯으로 텐션.
@@ -123,11 +117,10 @@ preview.png          assembly render preview
 **프린트**
 - input_pulley ×1, output_pulley ×1, **motor_plate ×1 (포스트 일체형)**, support_plate ×1
 - output_shaft ×1 (숄더 일체), (선택) output_arm ×1
-- spacer는 출력 안 함(포스트 일체형). output_bushing은 `use_bearings=false` 레거시 테스트용
 
 **하드웨어 (구매, 필수)**
 
-- **608ZZ 베어링 ×2** (22 OD × 8 ID × 7 W)  ← 처음부터 적용 (스냅 립으로 별도 클립 불필요)
+- **608ZZ 베어링 ×2** (22 OD × 8 ID × 7 W)  ← 처음부터 적용 (압입 + 외측 립으로 별도 클립 불필요)
 - **GT2 6mm 닫힌루프 벨트 75T(150mm) ×1**  ← 직접 구매
 - M3 grub(셋스크류) ×2 (풀리 ×2), 가능하면 황동 heat-set 인서트
 - **리드↔포스트 M3 스크류 ×4** — 자가탭이면 M3×16~18, 길이 ≈ `plate_th + post_pilot_depth`(≈ 19mm) 이하. 반복 분해 시 포스트 상단에 M3 heat-set 인서트 권장
@@ -145,11 +138,12 @@ preview.png          assembly render preview
 - 벽 3 perimeter, 인필 ≥ 40%
 - **motor_plate(베이스): 모터 면을 베드에 바닥으로 → 포스트가 위로** 수직 출력, 서포트 불필요. 포스트·베어링 포켓·파일럿 모두 위로 열려 브리징 없음
 - **두 플레이트는 베어링 허브가 서로 반대 방향**입니다(베이스=갭 쪽 증육, 리드=암 쪽 증육). 그래서 출력 방향도 반대지만 둘 다 서포트가 필요 없습니다. 허브만 국소 증육(~8.5mm)되고 스트럿·패드는 5mm 그대로라 필라멘트 증가는 최소입니다.
-  - 베이스(motor_plate): **포켓이 위로**(모터 면이 베드). 포켓·립·스냅 립이 위로 열려 브리징 없음.
-  - 리드(support_plate): **포켓이 아래로**(스파이더가 베드에 평평, 허브가 위로). 갭쪽 스냅 립은 첫 레이어, 외측 립 플로어는 Ø18→Ø22 약 2mm 환형 브리지라 서포트 없이 출력됩니다. `lid_strut_w = 6mm` 스트럿이라 베이스보다 가볍고 빠름.
-- 스트럿이 너무 약하면 `strut_w`(베이스) / `lid_strut_w`(리드)를 키우고, 더 가볍게 하려면 줄이세요(리지드 ↔ 필라멘트 트레이드오프)
+  - 베이스(motor_plate): **포켓이 위로**(모터 면이 베드). 포켓·립이 위로 열려 브리징 없음.
+  - 리드(support_plate): **포켓이 아래로**(플레이트가 베드에 평평, 허브가 위로). 외측 립 플로어는 Ø18→Ø22 약 2mm 환형 브리지라 서포트 없이 출력됩니다.
+- 스트럿이 너무 약하면 `strut_w`를 키우고, 더 가볍게 하려면 줄이세요(강성 ↔ 필라멘트 트레이드오프)
 - 풀리: 플랜지면을 베드 바닥으로(현재 모델 방향 그대로). 서포트 불필요
-- 공차는 `tooth_clearance`/`bore_clearance`/`bearing_press_fit`/`journal_clearance`로 튜닝(위 _공차/끼워맞춤_ 참고)
+- **output_shaft: 출력단(긴 쪽)을 베드로 향하게 수직 출력(output-end-down).** 숄더 시트면이 위를 향해 평평한 선반이 되고, 숄더 윗면 45° 챔퍼가 유일한 아래보기 면이라 서포트 없이 출력됩니다. (반대로 세우면 시트면이 오버행이 되어 서포트 필요)
+- 공차는 `tooth_clearance`/`bore_clearance`/`bearing_press_fit`로 튜닝(위 _공차/끼워맞춤_ 참고)
 - 리드↔포스트 체결: 포스트 파일럿에 M3 자가탭, 또는 상단에 M3 heat-set 인서트
 - **일체형 포스트 = 별도 파트 4개 제거 → 출력 셋업·필라멘트·시간 절감**
 
@@ -157,7 +151,7 @@ preview.png          assembly render preview
 
 ## 조립 순서
 
-1. **608ZZ 베어링 압입:** 양 플레이트의 베어링 허브에 608ZZ를 수직으로 눌러 끼웁니다. 스냅 립을 지나 클릭감이 느껴지면 완전히 착좌된 것입니다. 무리한 타격 금지 — 손으로 누르거나 프린트 지그로 균등하게 압입하세요.
+1. **608ZZ 베어링 압입:** 양 플레이트의 베어링 허브에 608ZZ를 갭 쪽에서 수직으로 눌러 끼웁니다. 외측 립 플로어에 바닥날 때까지 밀어 넣으면 완전히 착좌된 것입니다. 무리한 타격 금지 — 손으로 누르거나 프린트 지그로 균등하게 압입하세요. 분해는 아우터 쪽에서 외륜을 밀어냅니다.
 2. motor_plate(포스트 일체형)에 NEMA17 장착(슬롯에 느슨하게) → 입력 풀리 모터축 고정.
 3. **output_shaft를 갭 쪽에서 motor_plate(하부) 베어링에 통과**시켜 아래로 내립니다(숄더는 위쪽 암 방향). output_pulley를 갭 안에서 샤프트에 끼우고 셋스크류 임시 고정.
 4. 벨트를 두 풀리에 건다.
@@ -189,4 +183,3 @@ $osc = "C:\Program Files\OpenSCAD\openscad.exe"
 
 - NEMA17 **샤프트 5mm, 보스 22mm, 볼트피치 31mm** 표준 가정. `motor_body_len`(SF2424 몸체 길이)은 실측 권장.
 - 프레임 플레이트는 견고하지만 무겁습니다 — 동작 검증 후 경량화(포켓/리브) 추천.
-- 기본값은 608ZZ 베어링(`use_bearings=true`)입니다. 출력 평베어링(`use_bearings=false`)은 마찰/마모가 커 단순 검증용 레거시 옵션입니다.

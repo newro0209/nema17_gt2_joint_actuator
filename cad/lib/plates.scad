@@ -1,0 +1,237 @@
+// =============================================================================
+//  plates.scad  -  Frame plates + output bearing feature.
+//                  (프레임 플레이트 + 출력 베어링 기능)
+//  Filament-optimised truss of nodes (bearing hub, post bosses, motor pad)
+//  joined by struts. The two plates are intentionally DIFFERENT:
+//  (스트럿으로 연결된 노드(베어링 허브, 포스트 보스, 모터 패드)들로 이루어진 필라멘트 최적화 트러스 구조입니다. 두 플레이트는 의도적으로 다르게 설계되었습니다:)
+//    * motor plate (base) : solid NEMA17 pad + integral posts + arms to the
+//                           bearing hub. Carries motor + belt load.
+//      (모터 플레이트 (하단): 솔리드 NEMA17 패드 + 일체형 포스트 + 베어링 허브로 이어지는 암. 모터 및 벨트 하중을 견딥니다.)
+//    * support plate (lid): continuous upper bearing support.
+//      (서포트 플레이트 (상단): 끊김 없이 이어지는 상단 베어링 지지부.)
+//
+//  Bearing retention (A안): plate_th (5) < bearing_w (7), so the hub is LOCALLY
+//  thickened so a real lip exists. The 608ZZ is press-fit and axially stopped on
+//  the outboard side by a retaining lip floor (Ø bearing_od-2*bearing_lip).
+//  (베어링 고정 (A안): 플레이트 두께(5) < 베어링 너비(7)이므로 허브 부분을 국부적으로 두껍게 하여 실제 립(lip)을 만듭니다. 608ZZ는 억지 끼워맞춤되며 외부 쪽은 유지 립 바닥(Ø 베어링 외경-2*베어링_립)에 의해 축 방향으로 고정됩니다.)
+//  Insert each bearing from the gap side; remove it by pushing on the outer race
+//  from the outboard side. The hub grows toward the gap on the base and away
+//  from the gap on the lid so each prints without support (base: motor-side down;
+//  lid: gap-side down).
+//  (각 베어링을 갭(gap) 쪽에서 삽입하고, 분리할 때는 외부 쪽에서 외륜을 밀어냅니다. 허브는 하단 플레이트에서는 갭을 향해 돌출되고 상단 플레이트에서는 갭 반대 방향으로 돌출되어 둘 다 서포트 없이 출력 가능합니다 (하단: 모터 쪽이 아래로, 상단: 갭 쪽이 아래로).)
+//  Depends on plate/bearing/motor params + standoffs and through()/xslot().
+//  (플레이트/베어링/모터 파라미터 + 스탠드오프 및 through()/xslot()에 의존합니다.)
+// =============================================================================
+
+// Hub height needed to host: lip floor + full bearing width.
+// (베어링을 수용하기 위해 필요한 허브 높이: 립 바닥 + 베어링 전체 너비)
+function bearing_hub_h() = bearing_lip_floor + bearing_w;
+
+// 2D rounded/tapered bar between two points.
+// (두 지점 사이의 둥근/테이퍼드 2D 바)
+module strut2d(a, b, w = strut_w, wa = 0, wb = 0) {
+    da = (wa == 0) ? w : wa;
+    db = (wb == 0) ? w : wb;
+    hull() {
+        translate(a) circle(d = da, $fn = 32);
+        translate(b) circle(d = db, $fn = 32);
+    }
+}
+
+module hub2d(extra = 0) { translate([center_distance, 0]) circle(d = bearing_od + 2 * hub_collar + extra, $fn = 96); }
+module post_boss2d(p, extra = 0) { translate(p) circle(d = standoff_screw_d + 2 * boss_extra + extra, $fn = 48); }
+module motor_pad2d(extra = 0) {
+    offset(r = motor_pad_margin + extra, $fn = 32)
+        square([motor_size, motor_size], center = true);
+}
+
+function plate_min_x() = min(-motor_size / 2, standoffs[0][0], standoffs[1][0]) - plate_edge_margin;
+function plate_max_x() = max(center_distance + bearing_od / 2, standoffs[2][0], standoffs[3][0]) + plate_edge_margin;
+function plate_min_y() = min(-motor_size / 2, standoffs[0][1], standoffs[2][1]) - plate_edge_margin;
+function plate_max_y() = max( motor_size / 2, standoffs[1][1], standoffs[3][1]) + plate_edge_margin;
+
+module plate_shell2d() {
+    min_x = plate_min_x();
+    max_x = plate_max_x();
+    min_y = plate_min_y();
+    max_y = plate_max_y();
+    translate([(min_x + max_x) / 2, (min_y + max_y) / 2])
+        rounded_rect2d([max_x - min_x, max_y - min_y], plate_corner_r);
+}
+
+module plate_window2d(is_base) {
+    if (is_base) {
+        // Small inspection slots only; keep motor mount, bearing hub, and post bosses tied together.
+        // (작은 검사용 슬롯만 생성; 모터 마운트, 베어링 허브, 포스트 보스들이 서로 연결된 상태를 유지함.)
+        translate([center_distance * 0.42, -motor_size / 2 + 8])
+            rounded_rect2d([center_distance * 0.48, 5.0], 2.5);
+        translate([center_distance * 0.42,  motor_size / 2 - 8])
+            rounded_rect2d([center_distance * 0.48, 5.0], 2.5);
+    } else {
+        // No lid window: keep the support plate as a continuous bearing support.
+        // (상단 윈도우 없음: 서포트 플레이트를 연속적인 베어링 지지부로 유지함.)
+    }
+}
+
+// Support-plate (lid) footprint: reduced 4-spoke spider (no perimeter ties).
+// (서포트 플레이트 (상단) 풋프린트: 테두리 연결부가 없는 축소된 4스포크 스파이더 형태.)
+module lid_outline() {
+    soft_outline2d()
+        union() {
+            plate_shell2d();
+            hub2d(2.0);
+            for (p = standoffs) post_boss2d(p, 1.6);
+        }
+}
+
+// Motor-plate (base) footprint: solid mounting pad + truss out to hub/posts.
+// (모터 플레이트 (하단) 풋프린트: 솔리드 마운팅 패드 + 허브/포스트로 뻗어나가는 트러스 형태.)
+module base_outline() {
+    soft_outline2d()
+        union() {
+            plate_shell2d();
+            motor_pad2d(1.0);
+            hub2d(2.0);
+            for (p = standoffs) post_boss2d(p, 1.8);
+        }
+}
+
+// Local bearing-hub boss beyond the plate body.
+// (플레이트 바디 밖으로 돌출된 국부적 베어링 허브 보스.)
+// is_base : grow toward the gap (+Z). lid : grow away from the gap (-Z).
+// (is_base : 하단 플레이트는 갭 방향(+Z)으로 돌출. 상단(lid) 플레이트는 갭 반대 방향(-Z)으로 돌출.)
+module bearing_hub_boss(is_base) {
+    extra = bearing_hub_h() - plate_th;
+    translate([center_distance, 0, is_base ? plate_th : -extra])
+        cylinder(d = bearing_od + 2 * hub_collar + 1.0, h = extra, $fn = 96);
+}
+
+// Bearing pocket: press-fit bore + outer retaining feature.
+// (베어링 포켓: 억지 끼워맞춤 보어 + 외부 유지 기능.)
+//   base : motor side. Either an open Ø(od-2*lip) lip, OR (lower_plate_blind)
+//          a closed dust-cap floor with only an inner-race clearance recess.
+//   (base: 모터 측. 열려있는 Ø(외경-2*립) 립 구조이거나, (lower_plate_blind일 경우) 막혀있는 먼지 덮개 바닥에 내륜 간섭 방지용 홈만 있는 구조.)
+//   lid  : support side, always open lip so the shaft passes through.
+//   (lid: 서포트 측, 샤프트가 통과할 수 있도록 항상 열려있는 립 구조.)
+module output_bore_feature(is_base) {
+    H = bearing_hub_h();
+    pf = bearing_od - bearing_press_fit;
+    translate([center_distance, 0, 0]) {
+        if (is_base) {
+            if (lower_plate_blind) {
+                // closed outer face: solid cap, recessed on the bearing side to
+                // clear the rotating inner race/shield; outer race rests on the cap.
+                // (닫힌 외부 면: 솔리드 캡. 베어링 쪽에 회전하는 내륜/실드 간섭 방지 홈이 있으며, 외륜은 캡에 안착됨.)
+                translate([0, 0, bearing_lip_floor - bearing_inner_relief_h])
+                    cylinder(d = bearing_inner_relief_d,
+                             h = bearing_inner_relief_h + boolean_eps, $fn = 60);
+            } else {
+                // open lip: Ø(od-2*lip) through to the outer face.
+                // (열린 립: 외부 면까지 Ø(외경-2*립)으로 뚫림.)
+                through(bearing_od - 2 * bearing_lip, H);
+            }
+            // press-fit pocket, open toward the gap.
+            // (억지 끼워맞춤 포켓, 갭 방향으로 열려있음.)
+            translate([0, 0, bearing_lip_floor])
+                cylinder(d = pf, h = bearing_w + boolean_eps, $fn = 80);
+        } else {
+            // lid hub spans plate_th-H..plate_th (away from gap). Gap mouth at plate_th.
+            // (상단 허브는 plate_th-H 부터 plate_th까지 차지함 (갭 반대 방향). 갭 입구는 plate_th에 위치.)
+            translate([0, 0, plate_th - H]) through(bearing_od - 2 * bearing_lip, H);
+            translate([0, 0, plate_th - bearing_w])
+                cylinder(d = pf, h = bearing_w + boolean_eps, $fn = 80);
+        }
+    }
+}
+
+// is_base : true  -> motor plate (pad + integral posts + self-tap pilots + motor cuts)
+//           (true  -> 모터 플레이트 (패드 + 일체형 포스트 + 셀프태핑 파일럿 + 모터 마운트 컷))
+//           false -> support lid (reduced spider + M3 clearance through-holes)
+//           (false -> 서포트 상단 (축소된 스파이더 + M3 클리어런스 관통 홀))
+module frame_body(is_base) {
+    difference() {
+        union() {
+            linear_extrude(plate_th)
+                if (is_base) base_outline(); else lid_outline();
+            bearing_hub_boss(is_base);
+        }
+
+        output_bore_feature(is_base);
+
+        if (is_base) {
+            // NEMA17 boss + 4 slotted M3 mount holes through the plate
+            // (NEMA17 보스 + 플레이트를 관통하는 4개의 M3 마운트용 슬롯)
+            motor_mount_cuts(-boolean_eps, plate_th + 2 * boolean_eps);
+        } else {
+            // lid: screws pass straight through into the posts below
+            // (상단: 나사가 일직선으로 아래쪽 포스트까지 관통함)
+            for (p = standoffs)
+                translate([p[0], p[1], 0]) through(standoff_screw_d, plate_th, 24);
+        }
+    }
+}
+
+// NEMA17 boss clearance + 4 tension-slotted M3 mount holes, extruded over z0..z0+h.
+// (NEMA17 보스 클리어런스 + 4개의 장력 조절용 M3 마운트 슬롯을 z0부터 z0+h까지 돌출.)
+// Shared by the plate body AND the corner towers so the motor-end towers do not
+// cover the mount slots (they get a slot-shaped channel for screw access + travel).
+// (플레이트 바디 및 코너 타워에서 공유하여 모터 쪽 타워가 마운트 슬롯을 가리지 않게 함 (나사 접근 및 이동을 위한 슬롯 형태의 채널을 확보함).)
+module motor_mount_cuts(z0, h) {
+    translate([0, 0, z0]) linear_extrude(h)
+        xslot(motor_boss_d, tension_travel);
+    for (sx = [-1, 1], sy = [-1, 1])
+        translate([sx * motor_hole_pitch / 2, sy * motor_hole_pitch / 2, z0])
+            linear_extrude(h)
+                xslot(motor_screw_d, tension_travel);
+}
+
+module post_tower2d(p) {
+    sx = (p[0] < center_distance) ? -1 : 1;
+    sy = (p[1] < 0) ? -1 : 1;
+    x0 = (sx < 0) ? plate_min_x() : plate_max_x() - post_tower_size;
+    y0 = (sy < 0) ? plate_min_y() : plate_max_y() - post_tower_size;
+    // round the inner corner back so each tower clears the adjacent feature
+    // (mount slot + M3 head + travel on the motor end, pulley keepout on the
+    // output end) while keeping the outer pilot boss.
+    // (각 타워가 인접한 형태(모터 쪽의 마운트 슬롯+M3 헤드+이동 공간, 출력 쪽의 풀리 간섭 구역)와 간섭되지 않도록 안쪽 모서리를 둥글게 깎아냄. 외곽 파일럿 보스는 유지함.)
+    icx = (sx < 0) ? x0 + post_tower_size : x0;  // inner corner X (toward plate centre) (안쪽 모서리 X 좌표 - 플레이트 중심 방향)
+    icy = (sy < 0) ? y0 + post_tower_size : y0;  // inner corner Y (toward plate centre) (안쪽 모서리 Y 좌표 - 플레이트 중심 방향)
+    difference() {
+        intersection() {
+            plate_shell2d();
+            translate([x0, y0]) square([post_tower_size, post_tower_size]);
+        }
+        translate([icx, icy]) circle(r = post_inner_relief_r, $fn = 64);
+    }
+}
+
+module post_towers() {
+    for (p = standoffs)
+        translate([0, 0, plate_th - boolean_eps])
+            linear_extrude(plate_gap + boolean_eps)
+                post_tower2d(p);
+}
+
+module motor_post_frame() {
+    difference() {
+        post_towers();
+        translate([center_distance, 0, plate_th - boolean_eps])
+            cylinder(d = pulley_od(output_teeth) + 2 * flange_extra + 2 * post_pulley_clearance,
+                     h = plate_gap + 2 * boolean_eps, $fn = 96);
+    }
+}
+
+module motor_posts() {
+    difference() {
+        motor_post_frame();
+        // self-tap pilot bored down from each post top
+        // (각 포스트 상단에서 파내려간 셀프태핑 파일럿 홀)
+        for (p = standoffs)
+            translate([p[0], p[1], plate_th + plate_gap - post_pilot_depth])
+                cylinder(d = post_pilot_d, h = post_pilot_depth + boolean_eps, $fn = 24);
+    }
+}
+
+module motor_plate_body() { frame_body(true); }
+module motor_plate()      { union() { motor_plate_body(); motor_posts(); } }   // base + integral posts (하단 + 일체형 포스트)
+module support_plate()    { frame_body(false); }
