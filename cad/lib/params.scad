@@ -43,8 +43,12 @@ motor_screw_d    = 3.4;
 motor_boss_d     = 24.0;
 motor_body_len   = 59.5;
 
+/* [ Bearings / journal (베어링 / 저널) ] */
+bearing_od       = 22.0;
+bearing_w        = 7.0;
+
 /* [ Frame plates / integrated corner towers (프레임 플레이트 / 일체형 코너 타워) ] */
-plate_th         = 5.0;
+plate_th         = bearing_w;
 standoff_screw_d = 3.4;
 post_pilot_d     = 2.6;
 post_pilot_depth = 14.0;
@@ -60,10 +64,6 @@ plate_corner_r    = 12.0;
 
 /* [ Visual refinement (시각적 개선) ] */
 skin_rounding     = 0.85;
-
-/* [ Bearings / journal (베어링 / 저널) ] */
-bearing_od       = 22.0;
-bearing_w        = 7.0;
 
 /* [ Bearing pocket (베어링 포켓) ] */
 // 608ZZ outer race is held only by the press-fit bore.

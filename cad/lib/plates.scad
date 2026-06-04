@@ -10,19 +10,15 @@
 //    * support plate (lid): continuous upper bearing support.
 //      (서포트 플레이트 (상단): 끊김 없이 이어지는 상단 베어링 지지부.)
 //
-//  Bearing pocket: plate_th (5) < bearing_w (7), so the hub is LOCALLY
-//  thickened to hold the full bearing width as a plain press-fit bore.
-//  (베어링 포켓: 플레이트 두께(5) < 베어링 너비(7)이므로 허브 부분을 국부적으로 두껍게 하여 전체 베어링 폭을 단순 억지 끼워맞춤 보어로 지지합니다.)
-//  The hub grows toward the gap on the base and away
-//  from the gap on the lid so each prints without support (base: motor-side down;
-//  lid: gap-side down).
-//  (허브는 하단 플레이트에서는 갭을 향해 돌출되고 상단 플레이트에서는 갭 반대 방향으로 돌출되어 둘 다 서포트 없이 출력 가능합니다 (하단: 모터 쪽이 아래로, 상단: 갭 쪽이 아래로).)
+//  Bearing pocket: plate_th matches bearing_w, so there is no local bearing-hub
+//  protrusion; the plain press-fit bore spans the full plate thickness.
+//  (베어링 포켓: plate_th를 bearing_w에 맞춰 국부적인 베어링 허브 돌출 없이 단순 억지 끼워맞춤 보어가 플레이트 전체 두께를 관통합니다.)
 //  Depends on plate/bearing/motor params + standoffs and through()/xslot().
 //  (플레이트/베어링/모터 파라미터 + 스탠드오프 및 through()/xslot()에 의존합니다.)
 // =============================================================================
 
-// Hub height needed to host the full bearing width.
-// (베어링 전체 너비를 수용하기 위해 필요한 허브 높이)
+// Pocket height needed to host the full bearing width.
+// (베어링 전체 너비를 수용하기 위해 필요한 포켓 높이)
 function bearing_hub_h() = bearing_w;
 
 // 2D rounded/tapered bar between two points.
@@ -94,14 +90,13 @@ module base_outline() {
         }
 }
 
-// Local bearing-hub boss beyond the plate body.
-// (플레이트 바디 밖으로 돌출된 국부적 베어링 허브 보스.)
-// is_base : grow toward the gap (+Z). lid : grow away from the gap (-Z).
-// (is_base : 하단 플레이트는 갭 방향(+Z)으로 돌출. 상단(lid) 플레이트는 갭 반대 방향(-Z)으로 돌출.)
+// Local bearing-hub boss beyond the plate body, only needed if plate_th < bearing_w.
+// (plate_th가 bearing_w보다 작을 때만 필요한 플레이트 바디 밖 국부 베어링 허브 보스.)
 module bearing_hub_boss(is_base) {
     extra = bearing_hub_h() - plate_th;
-    translate([center_distance, 0, is_base ? plate_th : -extra])
-        cylinder(d = bearing_od + 2 * hub_collar + 1.0, h = extra, $fn = 96);
+    if (extra > 0)
+        translate([center_distance, 0, is_base ? plate_th : -extra])
+            cylinder(d = bearing_od + 2 * hub_collar + 1.0, h = extra, $fn = 96);
 }
 
 // Bearing pocket: press-fit bore only.
