@@ -19,20 +19,21 @@ GT2 타이밍 벨트 감속(20T → **60T = 3:1**) 로봇 조인트 액추에이
 
 ---
 
-## 파일
+## Repository layout
 
-| 파일 | 내용 |
-|------|------|
-| `joint_actuator.scad` | **엔트리.** 모든 파라미터(Customizer) + `include` + 렌더 선택 |
-| `lib/util.scad` | 공통 헬퍼: `through()`(관통 컷), `ring3d()`, `xslot()` |
-| `lib/gt2.scad` | GT2 톱니 프로파일·피치 함수·풀리 모듈 |
-| `lib/plates.scad` | 프레임 플레이트(모터/지지) + 출력 보어 피처 |
-| `lib/parts.scad` | 프린트 파트: 출력샤프트·부싱·스페이서·암 |
-| `lib/viz.scad` | 어셈블리 시각화: 모터·벨트·608ZZ 베어링·라벨·`assembly()` |
-| `preview.png` | 어셈블리 렌더 미리보기 |
+```text
+cad/                 OpenSCAD mechanical design
+  lib/               params.scad + reusable modules
+  src/               one printable part per file, plus preview-only assembly.scad
+  render.ps1         export printable parts to cad/build/*.stl
+docs/                reference notes
+joint_actuator.scad  legacy compatibility entrypoint with PART selector
+preview.png          assembly render preview
+```
 
-**`joint_actuator.scad`만 OpenSCAD에서 여세요** (`lib/*`는 단독 실행용이 아니라 include 됨).
-**Window ▸ Customizer** 로 값을 조절하거나, 파일 상단의 `PART` / `use_bearings` 등 파라미터를 직접 수정하세요. 구현(모듈)은 `lib/`에 분리되어 있어 파트별로 독립 편집이 쉽습니다.
+모든 공유 치수와 공차는 **`cad/lib/params.scad`** 에서 관리합니다.
+파트별 STL은 `cad/src/*.scad`가 각각 자기 자신을 렌더링하도록 구성되어 있습니다.
+기존처럼 `joint_actuator.scad`를 OpenSCAD에서 열어 `PART` 방식으로 미리보기/출력하는 것도 가능합니다.
 
 ---
 
@@ -44,7 +45,6 @@ GT2 타이밍 벨트 감속(20T → **60T = 3:1**) 로봇 조인트 액추에이
 | `output_pulley`  | 60T GT2 풀리 (보어 8mm, 플랜지 양면, M3 셋스크류) | 1 |
 | `motor_plate`    | **솔리드 모터 패드 + 베어링 허브 트러스 + 4개 포스트 일체형** (스켈레탈). 모터 구멍은 장력조절용 슬롯 | 1 |
 | `support_plate`  | **개방형 4-스포크 스파이더 (축소, lid_strut_w)** — 베어링 허브를 4개 포스트에 스트럿으로 연결. 모터 영역 없어 필라멘트 최소 | 1 |
-| `output_collar`  | 샤프트 축구속용 셋스크류 칼라 (모터쪽 베어링에 밀착) | 1 |
 | `output_shaft`   | Phase 1 프린트 출력샤프트 8mm (셋스크류용 D컷, 샤프트 숄더 일체) | 1 |
 | `output_bushing` | Phase 1 평베어링(부싱) 슬리브, 22mm 포켓 압입 (선택) | 1~2 |
 | `spacer`         | (레거시) 별도 스탠드오프 — 포스트 일체형으로 대체됨, 볼트관통 폴백용 | 0 |
@@ -75,9 +75,7 @@ GT2 타이밍 벨트 감속(20T → **60T = 3:1**) 로봇 조인트 액추에이
 
 **샤프트 축방향 잠금 (풀리 셋스크류와 독립적):**
 
-- `output_shaft` 일체형 **숄더** (`shaft_shoulder_d ≈ 12mm`, `shaft_shoulder_h ≈ 3mm`) — 암(arm) 쪽(상부) 베어링 내륜에 착좌
-- 신규 프린트 파트 `output_collar` (`collar_od ≈ 16mm`, `collar_h ≈ 8mm`, Ø8 보어, M3 셋스크류) — 모터 쪽(하부) 베어링 내륜에 밀착 체결
-- 숄더 + 칼라가 양쪽 내륜을 클램핑 → 풀리 셋스크류가 풀려도 샤프트 이탈 불가
+- `output_shaft` 일체형 **숄더** (`shaft_shoulder_d ≈ 12mm`, `shaft_shoulder_h ≈ 3mm`) — 암(arm) 쪽(상부) 베어링 내륜에 착좌하여 축방향 이동을 막음
 
 | 파라미터 | 값 | 설명 |
 | -------- | --- | ---- |
@@ -86,17 +84,15 @@ GT2 타이밍 벨트 감속(20T → **60T = 3:1**) 로봇 조인트 액추에이
 | `bearing_snap_h` | 1.0 mm | 스냅 립 높이 |
 | `shaft_shoulder_d` | ~12 mm | 샤프트 숄더 직경 |
 | `shaft_shoulder_h` | ~3 mm | 샤프트 숄더 높이 |
-| `collar_od` | ~16 mm | output_collar 외경 |
-| `collar_h` | ~8 mm | output_collar 높이 |
 | `lid_strut_w` | 6 mm | support_plate 스트럿 폭 (base strut_w=8mm보다 좁음) |
 
 ---
 
 ## 핵심 치수 / 기본값
 
-- 감속비 3:1, 중심거리 `center_distance = 40 mm`
+- 감속비 3:1, 중심거리 `center_distance = 32.5 mm`
 - 풀리 PD: 20T ≈ 12.73mm (OD 12.2), 60T ≈ 38.20mm (OD 38.2)
-- 벨트: **GT2 6mm**, 플레이트 간격 `plate_gap = 22mm`
+- 벨트: **GT2 6mm 닫힌루프 75T(150mm)**, 플레이트 간격 `plate_gap = 25mm`
 - 베어링: 608ZZ ×2 / 출력 보어 8mm / 입력 보어 5mm
 - 셋스크류: M3 / **리드↔포스트 결합: M3 자가탭(또는 heat-set 인서트)**
 - **스탠드오프 = 모터 플레이트 일체형 포스트** `post_od = 9mm`, 높이 `plate_gap`, 포스트 상단 `post_pilot_d = 2.6mm` 자가탭 파일럿
@@ -117,7 +113,7 @@ GT2 타이밍 벨트 감속(20T → **60T = 3:1**) 로봇 조인트 액추에이
 모터 플레이트의 4개 장착 구멍과 보스 구멍이 **X축 슬롯(`tension_travel = 10mm`)** 이라 모터를 밀고당겨 장력을 잡습니다.
 
 닫힌 루프 벨트 길이:  `L = 2C + π·(PD₁+PD₂)/2 + (PD₂−PD₁)²/(4C)`
-- C=40 → L ≈ 164mm → **GT2 6mm 닫힌루프 80T(160mm)** 사용 후 슬롯으로 텐션. (C ≈ 36–42mm 범위 커버)
+- C=32.5 → L ≈ 150mm → **GT2 6mm 닫힌루프 75T(150mm)** 사용 후 슬롯으로 텐션.
 - 다른 벨트를 쓰려면 위 식으로 C를 역산해 `center_distance`만 바꾸면 됩니다.
 
 ---
@@ -126,14 +122,14 @@ GT2 타이밍 벨트 감속(20T → **60T = 3:1**) 로봇 조인트 액추에이
 
 **프린트**
 - input_pulley ×1, output_pulley ×1, **motor_plate ×1 (포스트 일체형)**, support_plate ×1
-- output_shaft ×1 (숄더 일체), **output_collar ×1** (샤프트 축구속), (선택) output_arm ×1
+- output_shaft ×1 (숄더 일체), (선택) output_arm ×1
 - spacer는 출력 안 함(포스트 일체형). output_bushing은 `use_bearings=false` 레거시 테스트용
 
 **하드웨어 (구매, 필수)**
 
 - **608ZZ 베어링 ×2** (22 OD × 8 ID × 7 W)  ← 처음부터 적용 (스냅 립으로 별도 클립 불필요)
-- **GT2 6mm 닫힌루프 벨트 80T(160mm) ×1**  ← 직접 구매
-- M3 grub(셋스크류) ×3 (풀리 ×2 + output_collar ×1 — M3 grub 공용), 가능하면 황동 heat-set 인서트
+- **GT2 6mm 닫힌루프 벨트 75T(150mm) ×1**  ← 직접 구매
+- M3 grub(셋스크류) ×2 (풀리 ×2), 가능하면 황동 heat-set 인서트
 - **리드↔포스트 M3 스크류 ×4** — 자가탭이면 M3×16~18, 길이 ≈ `plate_th + post_pilot_depth`(≈ 19mm) 이하. 반복 분해 시 포스트 상단에 M3 heat-set 인서트 권장
 - NEMA17 장착 M3 볼트 ×4
 - _별도 스페이서·너트·긴 관통볼트는 일체형 포스트로 제거됨_
@@ -165,8 +161,7 @@ GT2 타이밍 벨트 감속(20T → **60T = 3:1**) 로봇 조인트 액추에이
 2. motor_plate(포스트 일체형)에 NEMA17 장착(슬롯에 느슨하게) → 입력 풀리 모터축 고정.
 3. **output_shaft를 갭 쪽에서 motor_plate(하부) 베어링에 통과**시켜 아래로 내립니다(숄더는 위쪽 암 방향). output_pulley를 갭 안에서 샤프트에 끼우고 셋스크류 임시 고정.
 4. 벨트를 두 풀리에 건다.
-5. **support_plate(리드)를 샤프트 위에서 4개 포스트에 얹습니다.** 리드의 상부 베어링이 샤프트를 따라 내려오다 **샤프트 숄더에 착좌**합니다. M3 스크류로 리드↔포스트 체결(자가탭/인서트).
-6. **output_collar를 아래에서 샤프트에 끼워 모터 쪽(하부) 베어링 내륜에 밀착** 후 M3 grub 셋스크류로 조입니다. → 숄더(아래로 이동 방지) + 칼라(위로 이동 방지)로 샤프트가 풀리 셋스크류와 무관하게 축방향 고정됩니다.
+5. **support_plate(리드)를 샤프트 위에서 4개 포스트에 얹습니다.** 리드의 상부 베어링이 샤프트를 따라 내려오다 **샤프트 숄더에 착좌**합니다. M3 스크류로 리드↔포스트 체결(자가탭/인서트). → 숄더가 상부 베어링 내륜에 착좌해 샤프트 축방향을 구속합니다.
 7. 두 풀리의 **톱니 중앙 평면을 일치**시키고 output_pulley 셋스크류 최종 체결 (벨트 정렬의 핵심).
 8. 모터를 슬롯에서 밀어 장력 조절 후 NEMA17 볼트 조임.
 
@@ -175,13 +170,15 @@ GT2 타이밍 벨트 감속(20T → **60T = 3:1**) 로봇 조인트 액추에이
 ## 재현 / 내보내기
 
 ```powershell
+.\cad\render.ps1                  # 모든 출력 파트 -> cad\build\*.stl
+.\cad\render.ps1 motor_plate      # 단일 파트만 출력
+```
+
+수동 출력 예시:
+
+```powershell
 $osc = "C:\Program Files\OpenSCAD\openscad.exe"
-$f   = ".\joint_actuator.scad"
-& $osc -o input_pulley.stl  -D 'PART="input_pulley"'  $f
-& $osc -o output_pulley.stl -D 'PART="output_pulley"' $f
-# 플레이트 (use_bearings=true 가 기본값 → 608ZZ 포켓 포함):
-& $osc -o motor_plate.stl   -D 'PART="motor_plate"'   $f
-& $osc -o support_plate.stl -D 'PART="support_plate"' $f
+& $osc -o cad\build\motor_plate.stl --export-format binstl cad\src\motor_plate.scad
 ```
 
 전 파트 OpenSCAD에서 manifold·NoError 검증 완료.

@@ -418,6 +418,7 @@ $RECYCLE.BIN/
 
 # build artifacts — STL/3MF are regenerated from .scad sources (cad/build/, etc.)
 build/
+cad/build/
 *.stl
 *.3mf
 *.gcode
