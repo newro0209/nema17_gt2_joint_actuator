@@ -41,7 +41,7 @@ plate_gap        = 25.0;
 motor_size       = 42.3;
 motor_hole_pitch = 31.0;
 motor_screw_d    = 3.4;
-motor_boss_d     = 24.0;
+motor_boss_d     = 22.4;  // SF2424 front pilot boss is phi22; keep 0.4mm diametral print clearance.
 motor_body_len   = 59.5;
 
 /* [ Bearings / journal (베어링 / 저널) ] */
